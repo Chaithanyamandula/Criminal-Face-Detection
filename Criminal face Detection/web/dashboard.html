@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criminal Face Detection Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <style>
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Global Styling with Gradient Theme */
+        :root {
+            --gradient-primary: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            --gradient-secondary: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            --background-gradient: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Navbar Styling */
+        .navbar {
+            background: var(--gradient-primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .navbar-brand {
+            color: #ffffff !important;
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8) !important;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #ffffff !important;
+            transform: translateX(5px);
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f4f8 100%);
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+            height: 100vh;
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 240px;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar .nav-item {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-secondary) !important;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left-color: var(--accent-color);
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 15px;
+            color: var(--accent-color);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover i {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            margin-left: 240px;
+            padding: 20px;
+            margin-top: 56px;
+            transition: margin-left 0.3s ease;
+        }
+
+        #content-area {
+            background: linear-gradient(to bottom right, #ffffff 0%, #f8f9fa 100%);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeIn 0.7s ease-out;
+        }
+
+        h2, h1 {
+            background: var(--gradient-primary);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        h2::after, h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--gradient-primary);
+        }
+
+        /* Input Styling */
+        .form-control {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e4e8;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Button Styling */
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--gradient-secondary);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                overflow: hidden;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Additional Enhancements */
+        #criminal-details {
+            background: linear-gradient(to bottom right, #f0f4f8 0%, #e6eaf0 100%);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        #criminal-photo {
+            max-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Add to your dashboard.html style section */
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(
+                45deg,
+                #492c50 0%,
+                #d68426 50%,
+                #3d234d 100%
+            );
+            color: white;
+            border: 2px solid rgba(32, 218, 235, 0.8);
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.5s ease;
+            background-size: 200% auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .logout-btn:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(150, 27, 177, 0.3);
+            border-color: white;
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Add keyframe animation */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Add to your style section */
+        .nav-logout-btn {
+            background: linear-gradient(
+                45deg,
+                #700b74 0%,
+                #1ea7c2 50%,
+                #8634dd 100%
+            );
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.4s ease;
+            background-size: 200% auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-logout-btn:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-logout-btn span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- The entire body structure remains the same as the previous version -->
+    <nav class="navbar navbar-dark fixed-top flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">
+            <i class="fas fa-user-shield"></i> Criminal Face Detection
+        </a>
+        <ul class="navbar-nav px-3">
+            <li class="nav-item text-nowrap">
+                <button class="nav-logout-btn" onclick="logout()">
+                    <span><i class="fas fa-sign-out-alt"></i> Logout</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 d-none d-md-block sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showUpload()">
+                                <i class="fas fa-upload"></i> Upload Image
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSearch()">
+                                <i class="fas fa-search"></i> Search Criminal
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showDetect()">
+                                <i class="fas fa-camera"></i> Real-Time Detection
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4 main-content">
+                <div id="content-area">
+                    <!-- Content remains the same as previous version -->
+                    <div id="upload-content">
+                        <h2>Upload Criminal Images</h2>
+                        <label for="name">Criminal Name:</label>
+                        <input type="text" id="name" class="form-control" placeholder="Enter Name" required>
+
+                        <label for="aadhaar-number">Aadhaar Number:</label>
+                        <input type="text" id="aadhaar-number" class="form-control" placeholder="Enter 12-digit Aadhaar Number" maxlength="12" required oninput="validateAadhaarNumber(this)">
+                        <small id="aadhaar-help" class="text-muted">Aadhaar number must be exactly 12 digits</small>
+
+                        <label for="crime-details">Crime Details:</label>
+                        <textarea id="crime-details" class="form-control" placeholder="Enter Crime Details" required></textarea>
+
+                        <div id="file-upload-section">
+                            <label for="image-upload">Select Images:</label>
+                            <input type="file" id="image-upload" class="form-control-file" multiple accept="image/*">
+                            <button class="btn btn-primary mt-3" onclick="processImages()">Upload & Process</button>
+                        </div>
+
+                        <div id="upload-results"></div>
+                    </div>
+
+                    <div id="search-content" style="display: none;">
+                        <h2>Search for Criminal</h2>
+                        <label for="search-image">Select Image:</label>
+                        <input type="file" id="search-image" class="form-control-file" accept="image/*">
+                        <button class="btn btn-primary mt-3" onclick="searchFace()">Search</button>
+                        <div id="search-results"></div>
+                        <div id="criminal-details" style="display: none;">
+                            <h3>Criminal Details</h3>
+                            <p><strong>Name:</strong> <span id="criminal-name"></span></p>
+                            <p><strong>Crime Done:</strong> <span id="criminal-crime"></span></p>
+                            <p><strong>Aadhaar Number:</strong> <span id="criminal-aadhaar"></span></p>
+                            <img id="criminal-photo" src="" alt="Criminal Photo">
+                        </div>
+                    </div>
+
+                    <div id="detect-content" style="display: none;">
+                        <h1>REAL TIME FACE DETECTION</h1>
+                        <button onclick="startDetection()" class="btn btn-danger">
+                            <i class="fas fa-camera"></i> Start Face Detection
+                        </button>
+                    </div>
+                    
+                    <script>
+                async function startDetection() {
+                    try {
+                        const result = await eel.start_detection()();
+                        if (result) {
+                            // Navigate to detection page in same window
+                            window.location.href = 'detection.html';
+                        }
+                    } catch (error) {
+                        console.error('Error starting detection:', error);
+                    }
+                }
+                    </script>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts remain the same as previous version -->
+     <!--
+     <script>
+        function validateAadhaarNumber(input) {
+            input.value = input.value.replace(/\D/g, '');
+            if (input.value.length > 12) {
+                input.value = input.value.slice(0, 12);
+            }
+        }
+
+        function logout() {
+            alert("Logging out...");
+            eel.logout();
+            window.location.href = "login.html";
+        }
+
+        function showUpload() {
+            document.getElementById('upload-content').style.display = 'block';
+            document.getElementById('search-content').style.display = 'none';
+            document.getElementById('detect-content').style.display = 'none';
+        }
+
+        function showSearch() {
+            document.getElementById('upload-content').style.display = 'none';
+            document.getElementById('search-content').style.display = 'block';
+            document.getElementById('detect-content').style.display = 'none';
+        }
+
+        function showDetect() {
+            document.getElementById('upload-content').style.display = 'none';
+            document.getElementById('search-content').style.display = 'none';
+            document.getElementById('detect-content').style.display = 'block';
+        }
+
+        function showFileUpload() {
+            document.getElementById('file-upload-section').style.display = 'block';
+            document.getElementById('upload-results').textContent = "";
+        }
+
+        // Default to Upload content on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showUpload();
+        });
+    </script>-->
+</body>
+</html>

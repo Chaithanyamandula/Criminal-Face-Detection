@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Face Detection</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .top-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        #camera-feed {
+            width: 640px;
+            height: 480px;
+            border-radius: 15px;
+            border: 3px solid #4facfe;
+            background: #000;
+        }
+        #criminal-alert {
+            display: none;
+            width: 300px;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+        }
+        #criminal-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        #criminal-table th {
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        #criminal-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-container">
+        <video id="camera-feed" autoplay></video>
+        <div id="criminal-alert">
+            <h2>⚠️ Criminal Detected!</h2>
+            <p><strong>Name:</strong> <span id="alert-name"></span></p>
+            <p><strong>Crime:</strong> <span id="alert-crime"></span></p>
+            <p><strong>Aadhaar:</strong> <span id="alert-aadhaar"></span></p>
+        </div>
+    </div>
+
+    <table id="criminal-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>Crime</th>
+                <th>Aadhaar Number</th>
+                <th>Spotted Time</th>
+                <th>Exit Time</th>
+                <th>Photo</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+
+
+      let detectedCriminals = new Map();
+
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
+        });
+        const video = document.getElementById('camera-feed');
+        video.srcObject = stream;
+        await video.play();
+        processVideoFrame();
+        console.log("Camera started successfully");
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Error accessing camera. Please ensure camera permissions are granted.');
+    }
+}
+
+function updateCriminalAlert(criminal) {
+    const alert = document.getElementById('criminal-alert');
+    document.getElementById('alert-name').textContent = criminal.name;
+    document.getElementById('alert-crime').textContent = criminal.crime;
+    document.getElementById('alert-aadhaar').textContent = criminal.aadhaar_number;
+    alert.style.display = 'block';
+    
+    // Hide alert after 5 seconds
+    setTimeout(() => {
+        alert.style.display = 'none';
+    }, 5000);
+}
+
+function updateCriminalTable(data) {
+    if (!data || !data.name) return;
+    
+    const tbody = document.querySelector('#criminal-table tbody');
+    const existingRow = document.querySelector(`tr[data-name="${data.name}"]`);
+    
+    if (existingRow) {
+        // Update existing row
+        const statusCell = existingRow.querySelector('td:first-child');
+        const exitTimeCell = existingRow.querySelector('td:nth-child(6)');
+        
+        if (data.exit_time) {
+            statusCell.textContent = '🔴 Inactive';
+            exitTimeCell.textContent = data.exit_time;
+        } else {
+            statusCell.textContent = '🟢 Active';
+            exitTimeCell.textContent = 'Still Present';
+        }
+    } else {
+        // Add new row
+        const row = document.createElement('tr');
+        row.setAttribute('data-name', data.name);
+        row.innerHTML = `
+            <td>🟢 Active</td>
+            <td>${data.name}</td>
+            <td>${data.crime}</td>
+            <td>${data.aadhaar_number}</td>
+            <td>${data.spotted_time}</td>
+            <td>${data.exit_time || 'Still Present'}</td>
+            <td><img src="data:image/jpeg;base64,${data.photo}" 
+                 alt="Criminal" style="width: 50px; height: 50px; border-radius: 5px;"></td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+
+async function processVideoFrame() {
+    const video = document.getElementById('camera-feed');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg');
+
+    try {
+        const result = await eel.process_camera_frame(imageData)();
+        console.log("Frame processing result:", result);
+        
+        if (result.status === 'success') {
+            updateCriminalAlert(result);
+            updateCriminalTable(result);
+        } else if (result.status === 'error') {
+            console.error('Error processing frame:', result.message);
+        }
+    } catch (error) {
+        console.error('Error processing frame:', error);
+    }
+
+    requestAnimationFrame(processVideoFrame);
+}
+
+// Start camera when page loads
+window.addEventListener('load', startCamera);
+    </script>
+</body>
+</html>

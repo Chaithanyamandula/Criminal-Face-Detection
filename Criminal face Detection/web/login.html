@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRIMINAL FACE DETECTION</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <div class="dashboard-section" id="dashboardSection" style="display: none;">
+    </div>
+    <style>
+        body {
+            background-image: url("images/background.jpg"); /* Replace with your image URL */
+            background-size: cover; /* Cover the entire viewport */
+            background-repeat: no-repeat; /* Prevent image repeating */
+            background-position: center; /* Center the image */
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.7); 
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+        .container h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+            position: relative; /* Added for toggle button positioning */
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 20px;
+            color: #666;
+        }
+        .input-group .toggle-password:hover {
+            color: #333;
+        }
+        button {
+            background-color: #000000;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            animation: spin 1s linear infinite;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        hover-text:hover {
+             color: #e74c3c; /* Text color on hover */
+         }
+        button:hover {
+            background: linear-gradient(45deg, #ffffff, #000000);
+            transform: scale(1.1);
+        }
+        .alt-links, .back-to-login {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .alt-links a, .back-to-login a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .alt-links a:hover, .back-to-login a:hover {
+            text-decoration: underline;
+        }
+        #login-error, #signup-error, #forgot-password-error {
+            color: red;
+            margin-top: 10px;
+        }
+        #forgot-password-success {
+            color: green;
+            margin-top: 10px;
+        }
+
+        /* Hidden sections by default */
+        .signup-section, .forgot-password-section, .dashboard-section {
+            display: none;
+        }
+        .dashboard-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .dashboard-container h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .dashboard-container button {
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        .dashboard-container button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container login-section" id="loginSection">
+        <h2>Login</h2>
+        <div class="input-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter username">
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter password">
+            <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+        </div>
+        <button onclick="login()">Login</button>
+        <div class="alt-links">
+            <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+            <a href="#" onclick="showSignup()">Signup</a>
+        </div>
+        <div id="login-error" style="display:none;">Invalid credentials. Please try again.</div>
+    </div>
+
+    <div class="container signup-section" id="signupSection">
+        <h2>Signup</h2>
+        <div class="input-group">
+            <label for="user_id">User ID</label>
+            <input type="text" id="user_id_signup" name="user_id" placeholder="Enter User ID" required>
+        </div>
+        <div class="input-group">
+            <label for="name">Name</label>
+            <input type="text" id="name_signup" name="name" placeholder="Enter your Name" required>
+        </div>
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email_signup" name="email" placeholder="Enter Email" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Set Password</label>
+            <input type="password" id="password_signup" name="password" placeholder="Set Password" required>
+            <span class="toggle-password" onclick="togglePassword('password_signup')">👁️</span>
+        </div>
+        <div class="input-group">
+            <label for="re_password">Re-enter Password</label>
+            <input type="password" id="re_password_signup" name="re_password" placeholder="Re-enter Password" required>
+            <span class="toggle-password" onclick="togglePassword('re_password_signup')">👁️</span>
+        </div>
+        <button onclick="signup()">Signup</button>
+        <div class="back-to-login">
+            <a href="#" onclick="showLogin()">Back to Login</a>
+        </div>
+         <div id="signup-error" style="display:none;">Signup failed. Please check details.</div>
+    </div>
+
+    <div class="container forgot-password-section" id="forgotPasswordSection">
+        <h2>Forgot Password?</h2>
+        <div class="input-group">
+            <label for="username_email">Username or Email</label>
+            <input type="text" id="username_email_forgot" name="username_email" placeholder="Enter username or email">
+        </div>
+        <button onclick="resetPassword()">Reset Password</button>
+        <div class="back-to-login">
+            <a href="#" onclick="showLogin()">Back to Login</a>
+        </div>
+        <div id="forgot-password-error" style="display:none;">Invalid username or email. Please check.</div>
+        <div id="forgot-password-success" style="display:none;">Password reset link sent to your email (dummy).</div>
+    </div>
+
+    <div class="dashboard-container dashboard-section" id="dashboardSection">
+        <h1>Welcome to Dashboard!</h1>
+        <p>You have successfully logged in.</p>
+        <button class="logout-btn" onclick="logout()" style=".logout-btn {
+            background: linear-gradient(45deg, 
+                #e74c3c 0%, 
+                #c0392b 50%,
+                #e74c3c 100%
+            );
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+        }
+        
+        .logout-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg,
+                #c0392b 0%,
+                #e74c3c 50%,
+                #c0392b 100%
+            );
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+        }
+        
+        .logout-btn:hover::before {
+            left: 0;
+            opacity: 1;
+        }
+        
+        .logout-btn span {
+            position: relative;
+            z-index: 1;
+        }">
+            <span>Logout</span>
+        </button>
+    </div>
+
+
+    <script type="text/javascript">
+        // Function to show/hide sections
+        function showSection(sectionId) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('signupSection').style.display = 'none';
+            document.getElementById('forgotPasswordSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'none';
+
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        function showLogin() {
+            showSection('loginSection');
+        }
+
+        function showSignup() {
+            showSection('signupSection');
+        }
+
+        function showForgotPassword() {
+            showSection('forgotPasswordSection');
+        }
+
+        function showDashboard() {
+            showSection('dashboardSection');
+        }
+
+        // Function to toggle password visibility
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.querySelector(`#${inputId} + .toggle-password`);
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.style.backgroundImage = "url('images/show.png')";// Change icon to "hide" state
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.style.backgroundImage = "url('images/hide.png')";// Change icon to "show" state
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+    
+            try {
+                const success = await eel.check_login(username, password)();
+                if (success) {
+            // Navigate to dashboard in same window
+                    window.location.href = 'dashboard.html';
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        async function signup() {
+            let user_id = document.getElementById('user_id_signup').value;
+            let name = document.getElementById('name_signup').value;
+            let email = document.getElementById('email_signup').value;
+            let password = document.getElementById('password_signup').value;
+            let re_password = document.getElementById('re_password_signup').value;
+
+            let signup_successful = await eel.register_user(user_id, name, email, password, re_password)();
+            if (signup_successful) {
+                alert("Signup successful!"); // Replace with better UI feedback if needed
+                showLogin();
+            } else {
+                document.getElementById('signup-error').style.display = 'block';
+            }
+        }
+
+        async function resetPassword() {
+            let username_email = document.getElementById('username_email_forgot').value;
+            let reset_successful = await eel.reset_password_request(username_email)();
+            if (reset_successful) {
+                document.getElementById('forgot-password-success').style.display = 'block';
+                document.getElementById('forgot-password-error').style.display = 'none';
+            } else {
+                document.getElementById('forgot-password-error').style.display = 'block';
+                document.getElementById('forgot-password-success').style.display = 'none';
+            }
+        }
+
+        async function logout() {
+            showLogin();
+        }
+
+        // Initially show only login section
+        showLogin();
+    </script>
+</body>
+</html>
+
+
+
+
+<style>
+    body {
+        background: radial-gradient(circle at center,
+            #2c3e50 0%,
+            #35b3bf 50%,
+            #2c3e50 100%
+        );
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: gradientBG 15s ease infinite;
+        background-size: 400% 400%;
+    }
+
+    .container {
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(240, 243, 247, 0.9) 100%
+        );
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    button {
+        background: linear-gradient(45deg, 
+            #2c3e50 0%, 
+            #35b3bf 50%,
+            #2c3e50 100%
+        );
+        color: white;
+        padding: 14px 30px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.8s ease;
+        width: 100%;
+        margin-top: 20px;
+        background-size: 200% auto;
+    }
+
+    button:hover {
+        background-position: right center;
+        transform: translateY(-2px);
+        box-shadow: 0 7px 14px rgba(44, 62, 80, 0.3);
+        transition: all 1s ease;
+    }
+    
+    
+    button:active {
+        transform: translateY(0);
+    }
+
+    /* Remove button loading spin animation */
+    button.loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+
+    button.loading::after {
+        content: '...';
+        position: absolute;
+        right: 10px;
+        animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+        0%, 20% { content: '.'; }
+        40%, 60% { content: '..'; }
+        80%, 100% { content: '...'; }
+    }
+
+    .input-group input {
+        background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(250, 250, 250, 0.9) 100%
+        );
+        border: 2px solid rgba(44, 62, 80, 0.1);
+    }
+
+    .input-group input:focus {
+        border-color: #35b3bf;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    /* Update link colors */
+    .alt-links a, .back-to-login a {
+        color: #2c3e50;
+        background: linear-gradient(to right, #2c3e50, #35b3bf);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Error and success messages */
+    #login-error, #signup-error, #forgot-password-error {
+        background: linear-gradient(
+            to right,
+            rgba(231, 76, 60, 0.1) 0%,
+            rgba(192, 57, 43, 0.1) 100%
+        );
+    }
+
+    #forgot-password-success {
+        background: linear-gradient(
+            to right,
+            rgba(39, 174, 96, 0.1) 0%,
+            rgba(46, 204, 113, 0.1) 100%
+        );
+    }
+
+
+
+    .btn-animated {
+        position: relative;
+        background: linear-gradient(45deg, #2c3e50, #35b3bf);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        z-index: 1;
+        margin: 10px;
+    }
+
+    .btn-animated::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #3498db, #2c3e50);
+        transition: all 0.5s ease;
+        z-index: -1;
+    }
+
+    .btn-animated:hover::before {
+        left: 0;
+    }
+
+    .btn-animated:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(44, 62, 80, 0.2);
+    }
+
+    .btn-forgot {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+    }
+
+    .btn-forgot::before {
+        background: linear-gradient(45deg, #c0392b, #e74c3c);
+    }
+
+    .btn-signup {
+        background: linear-gradient(45deg, #27ae60, #2ecc71);
+    }
+
+    .btn-signup::before {
+        background: linear-gradient(45deg, #2ecc71, #27ae60);
+    }
+
+    .button-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    }
+
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+
+    .logout-btn {
+    background: linear-gradient(45deg, 
+        #e74c3c 50%, 
+        #420366 100%
+    );
+    color: white;
+    padding: 12px 24px;
+    border: 2px solid white;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.logout-btn:hover {
+    background: linear-gradient(45deg, 
+        #c0392b 0%, 
+        #380b68 100%
+    );
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(223, 42, 21, 0.3);
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.logout-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(231, 51, 31, 0.2);
+}
+ 
+ 
+
+    .container:hover {
+        transform: translateY(-5px);
+    }
+
+    .container h2 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-size: 28px;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 10px;
+    }
+ 
+
+    .input-group {
+        margin-bottom: 20px;
+        text-align: left;
+        position: relative;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #34495e;
+        font-weight: 500;
+        font-size: 14px;
+        transition: color 0.3s ease;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        box-sizing: border-box;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .input-group input:focus {
+        border-color: #4ff5fe;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        outline: none;
+    }
+
+    .input-group .toggle-password {
+        position: absolute;
+        right: 12px;
+        top: 65%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 18px;
+        color: #95a5a6;
+        transition: color 0.3s ease;
+    }
+
+    .input-group .toggle-password:hover {
+        color: #4fc7fe;
+    }
+
+    button {
+        background: linear-gradient(45deg, #4ff8fe 0%, #00f2fe 100%);
+        color: white;
+        padding: 14px 30px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 14px rgba(79, 172, 254, 0.2);
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+
+    .alt-links, .back-to-login {
+        margin-top: 25px;
+        font-size: 14px;
+    }
+
+    .alt-links a, .back-to-login a {
+        color: #4fbbfe;
+        text-decoration: none;
+        margin: 0 10px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .alt-links a::after, .back-to-login a::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -2px;
+        left: 0;
+        background: linear-gradient(to right, #4ffefb 0%, #0044fe 100%);
+        transition: width 0.3s ease;
+    }
+
+    .alt-links a:hover::after, .back-to-login a:hover::after {
+        width: 100%;
+    }
+
+    #login-error, #signup-error, #forgot-password-error {
+        color: #e74c3c;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        background: rgba(231, 76, 60, 0.1);
+        font-size: 14px;
+        animation: shake 0.5s ease;
+    }
+
+    #forgot-password-success {
+        color: #27ae60;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        background: rgba(39, 174, 96, 0.1);
+        font-size: 14px;
+        animation: slideDown 0.5s ease;
+    }
+
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Add loading animation for buttons */
+    button.loading {
+        position: relative;
+        pointer-events: none;
+    }
+
+    button.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin: -10px 0 0 -10px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s infinite linear;
+
+    }
+
+    
+    /* ... existing styles ... */
+
+    .magnifying-glass {
+        position: absolute;
+        top: -60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(45deg, #2c3e50, #34d0db);
+        border-radius: 50%;
+        border: 4px solid #fff;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .magnifying-glass::before {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        right: -15px;
+        width: 40px;
+        height: 40px;
+        background: #fff;
+        border-radius: 10px;
+        transform: rotate(45deg);
+        box-shadow: -5px -5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .magnifying-glass:hover {
+        transform: translateX(-50%) scale(1.1);
+    }
+
+    .magnifying-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: scan 2s ease-in-out infinite;
+    }
+
+    .face-icon {
+        width: 60px;
+        height: 60px;
+        position: relative;
+    }
+
+    .face-icon::before,
+    .face-icon::after {
+        content: '';
+        position: absolute;
+        border: 2px solid #fff;
+    }
+
+    .face-icon::before {
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        border-style: dashed;
+        animation: rotate 4s linear infinite;
+    }
+
+    .face-icon::after {
+        width: 40%;
+        height: 40%;
+        top: 30%;
+        left: 30%;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes scan {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(5px); }
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Update container to accommodate magnifying glass */
+    .container {
+        margin-top: 60px;
+        /* ... existing container styles ... */
+    }
+
+    .logout-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(45deg, #c96712, #8d1dd8);
+        color: rgb(118, 227, 35);
+        border: 2px solid rgb(74, 230, 149);
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .logout-btn:hover {
+        background: linear-gradient(45deg, #bb15d8, #e67925);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    .logout-btn:active {
+        transform: translateY(0);
+    }
+ 
+</style>
+
