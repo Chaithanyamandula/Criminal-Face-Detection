@@ -18,19 +18,27 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import cv2
-import face_recognition
 import numpy as np
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 
+# Try importing dlib face_recognition if available, else fallback to OpenCV Engine
+try:
+    import face_recognition
+    HAS_FACE_RECOGNITION = True
+    print("[INFO] Using dlib face_recognition engine.")
+except ImportError:
+    HAS_FACE_RECOGNITION = False
+    print("[INFO] Using OpenCV High-Performance Face Detection & HOG Feature Engine.")
+
 app = FastAPI(title="Criminal Face Detection Cloud API", version="2.0.0")
 
 # Enable CORS for Netlify frontend and local testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (e.g. Netlify domains, localhost)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +56,44 @@ sender_password = "ituo zobk hmuz mgso"
 # Global Tracking Dictionaries
 criminal_tracking = {}
 last_detected_criminals = {}
+
+# OpenCV Fallback Face Engine Initialization
+cascade_path = os.path.join(BASE_DIR, 'haarcascade_frontalface_default.xml')
+if not os.path.exists(cascade_path):
+    cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+face_cascade = cv2.CascadeClassifier(cascade_path)
+hog_extractor = cv2.HOGDescriptor((64, 64), (16, 16), (8, 8), (8, 8), 9)
+
+def extract_face_data(rgb_img):
+    if HAS_FACE_RECOGNITION:
+        boxes = face_recognition.face_locations(rgb_img)
+        encs = face_recognition.face_encodings(rgb_img, boxes)
+        return boxes, encs
+    else:
+        gray = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
+        boxes = []
+        encs = []
+        for (x, y, w, h) in faces:
+            boxes.append((y, x + w, y + h, x))
+            face_roi = cv2.resize(gray[y:y+h, x:x+w], (64, 64))
+            feat = hog_extractor.compute(face_roi).flatten()
+            norm = np.linalg.norm(feat)
+            if norm > 0:
+                feat = feat / norm
+            encs.append(feat)
+        return boxes, encs
+
+def calculate_distance(stored_enc, candidate_enc):
+    if HAS_FACE_RECOGNITION:
+        dists = face_recognition.face_distance([stored_enc], candidate_enc)
+        return float(dists[0]) if len(dists) > 0 else 1.0
+    else:
+        return float(np.linalg.norm(stored_enc - candidate_enc))
+
+def is_face_match(stored_enc, candidate_enc, threshold=0.6):
+    dist = calculate_distance(stored_enc, candidate_enc)
+    return (dist <= threshold), dist
 
 def init_db():
     try:
@@ -79,7 +125,7 @@ def init_db():
         if 'aadhaar_number' not in columns:
             cursor.execute("ALTER TABLE criminals ADD COLUMN aadhaar_number TEXT")
 
-        allowed_users = ['user261', 'user253', 'user254', 'user241', 'user231', 'user']
+        allowed_users = ['user261', 'user253', 'user241', 'user231', 'user']
         for u_id in allowed_users:
             cursor.execute("SELECT id FROM users WHERE user_id = ?", (u_id,))
             if not cursor.fetchone():
@@ -174,7 +220,12 @@ def send_email_with_capture_async(subject, body, capture_image_path, receiver_em
 # API Endpoints
 @app.get("/")
 def health_check():
-    return {"status": "online", "system": "Criminal Face Detection Cloud API", "database": "SQLite cfd.db"}
+    return {
+        "status": "online",
+        "system": "Criminal Face Detection Cloud API",
+        "engine": "dlib face_recognition" if HAS_FACE_RECOGNITION else "OpenCV High-Performance HOG Engine",
+        "database": "SQLite cfd.db"
+    }
 
 @app.post("/api/login")
 def api_login(req: LoginRequest):
@@ -251,8 +302,7 @@ async def api_upload_criminal(
                 continue
 
             rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            boxes = face_recognition.face_locations(rgb_img)
-            encodings = face_recognition.face_encodings(rgb_img, boxes)
+            _, encodings = extract_face_data(rgb_img)
 
             for encoding in encodings:
                 known_encodings.append(encoding)
@@ -288,8 +338,7 @@ def api_search_face(req: ImageSearchRequest):
             return {"status": "error", "message": "Error reading image"}
 
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_image)
-        face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+        face_locations, face_encodings = extract_face_data(rgb_image)
 
         if not face_encodings:
             return {"status": "error", "message": "No face detected in image"}
@@ -314,9 +363,9 @@ def api_search_face(req: ImageSearchRequest):
                 for stored_encoding in stored_encodings:
                     if not isinstance(stored_encoding, np.ndarray) or stored_encoding.ndim != 1:
                         continue
-                    face_distances = face_recognition.face_distance([stored_encoding], face_encodings[0])
-                    
-                    if len(face_distances) > 0 and face_distances[0] <= recognition_threshold:
+
+                    matched, dist = is_face_match(stored_encoding, face_encodings[0], recognition_threshold)
+                    if matched:
                         top, right, bottom, left = face_locations[0]
                         face_image = image[top:bottom, left:right]
                         _, buffer = cv2.imencode('.jpg', face_image)
@@ -329,7 +378,7 @@ def api_search_face(req: ImageSearchRequest):
                             "crime": crime_details,
                             "aadhaar_number": aadhaar_number,
                             "photo": photo_base64,
-                            "confidence": float(1 - face_distances[0])
+                            "confidence": float(max(0.0, 1.0 - dist))
                         }
             except Exception as e:
                 continue
@@ -353,8 +402,7 @@ def api_process_frame(req: ProcessFrameRequest):
             return {"status": "error", "message": "Failed to decode frame"}
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        face_locations, face_encodings = extract_face_data(rgb_frame)
 
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -386,8 +434,6 @@ def api_process_frame(req: ProcessFrameRequest):
         cursor.execute("SELECT name, crime_details, encodings, aadhaar_number FROM criminals")
         records = cursor.fetchall()
 
-        matched_criminal = None
-
         for face_encoding, face_location in zip(face_encodings, face_locations):
             for row in records:
                 stored_name, crime_details, stored_encodings_blob, aadhaar_number = row
@@ -403,9 +449,10 @@ def api_process_frame(req: ProcessFrameRequest):
                     for stored_encoding in stored_encodings:
                         if not isinstance(stored_encoding, np.ndarray) or stored_encoding.ndim != 1:
                             continue
-                        matches = face_recognition.compare_faces([stored_encoding], face_encoding, tolerance=0.5)
 
-                        if True in matches:
+                        matched, dist = is_face_match(stored_encoding, face_encoding, tolerance=0.6)
+
+                        if matched:
                             os.makedirs(os.path.join(BASE_DIR, "criminal_captures"), exist_ok=True)
                             top, right, bottom, left = face_location
                             criminal_capture = rgb_frame[top:bottom, left:right]
