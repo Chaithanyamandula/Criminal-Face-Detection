@@ -1,0 +1,7 @@
+Backend/
+requirements.txt
+render.yaml
+Dockerfile
+Procfile
+*.db
+*.py
