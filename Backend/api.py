@@ -135,13 +135,18 @@ def init_db():
             except Exception:
                 pass
 
-        allowed_users = ['user261', 'user253', 'user241', 'user231', 'user']
+        allowed_users = ['user261', 'user253', 'user241', 'user231', 'user', 'admin']
         for u_id in allowed_users:
-            cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (u_id,))
+            cursor.execute("SELECT user_id FROM users WHERE LOWER(user_id) = LOWER(?)", (u_id,))
             if not cursor.fetchone():
                 cursor.execute(
                     "INSERT INTO users (user_id, name, email, password_hash) VALUES (?, ?, ?, ?)",
                     (u_id, f"Officer {u_id}", f"{u_id}@police.gov", "123456")
+                )
+            else:
+                cursor.execute(
+                    "UPDATE users SET password_hash = ? WHERE LOWER(user_id) = LOWER(?)",
+                    ("123456", u_id)
                 )
 
         conn.commit()
@@ -240,13 +245,15 @@ def health_check():
 @app.post("/api/login")
 def api_login(req: LoginRequest):
     try:
+        username = req.username.strip()
+        password = req.password.strip()
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT password_hash FROM users WHERE user_id = ?", (req.username,))
+        cursor.execute("SELECT password_hash FROM users WHERE LOWER(user_id) = LOWER(?)", (username,))
         row = cursor.fetchone()
         conn.close()
         
-        if row and row[0] == req.password:
+        if row and row[0].strip() == password:
             return {"status": "success", "message": "Login successful"}
         else:
             return {"status": "error", "message": "Invalid credentials"}
