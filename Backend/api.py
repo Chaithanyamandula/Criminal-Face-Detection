@@ -102,7 +102,6 @@ def init_db():
         
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT UNIQUE NOT NULL,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -120,14 +119,25 @@ def init_db():
             )
         ''')
 
-        cursor.execute("PRAGMA table_info(criminals)")
+        cursor.execute("PRAGMA table_info(users)")
         columns = [column[1] for column in cursor.fetchall()]
-        if 'aadhaar_number' not in columns:
-            cursor.execute("ALTER TABLE criminals ADD COLUMN aadhaar_number TEXT")
+        if 'id' not in columns:
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN id INTEGER")
+            except Exception:
+                pass
+
+        cursor.execute("PRAGMA table_info(criminals)")
+        crim_columns = [column[1] for column in cursor.fetchall()]
+        if 'aadhaar_number' not in crim_columns:
+            try:
+                cursor.execute("ALTER TABLE criminals ADD COLUMN aadhaar_number TEXT")
+            except Exception:
+                pass
 
         allowed_users = ['user261', 'user253', 'user241', 'user231', 'user']
         for u_id in allowed_users:
-            cursor.execute("SELECT id FROM users WHERE user_id = ?", (u_id,))
+            cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (u_id,))
             if not cursor.fetchone():
                 cursor.execute(
                     "INSERT INTO users (user_id, name, email, password_hash) VALUES (?, ?, ?, ?)",
@@ -251,7 +261,7 @@ def api_register(req: RegisterRequest):
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE user_id = ?", (req.user_id,))
+        cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (req.user_id,))
         if cursor.fetchone():
             conn.close()
             return {"status": "error", "message": "User ID already exists"}
