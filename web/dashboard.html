@@ -376,6 +376,87 @@
             width: 96.4%;
             background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
         }
+
+        /* Responsive Media Queries */
+        @media (max-width: 1100px) {
+            .module-grid {
+                grid-template-columns: 1fr;
+            }
+            .telemetry-bar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 16px;
+            }
+            .nav-brand {
+                font-size: 15px;
+                letter-spacing: 1px;
+            }
+            .sidebar {
+                width: 60px;
+                padding: 16px 8px;
+            }
+            .sidebar:hover {
+                width: 210px;
+            }
+            .main-viewport {
+                margin-left: 60px;
+                padding: 16px;
+            }
+            .hero-launch-card {
+                padding: 24px 16px;
+            }
+            .hero-launch-card h2 {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+            .launch-surveillance-btn {
+                padding: 14px 24px;
+                font-size: 13px;
+                width: 100%;
+                justify-content: center;
+            }
+            .form-grid-2col {
+                grid-template-columns: 1fr;
+            }
+            .module-card {
+                padding: 20px 16px;
+            }
+            .result-match-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                position: relative;
+                top: 0;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                border-right: none;
+                border-bottom: 1px solid var(--border-glow);
+                padding: 8px;
+            }
+            .sidebar:hover {
+                width: 100%;
+            }
+            .side-icon-btn span {
+                display: none;
+            }
+            .main-viewport {
+                margin-left: 0;
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>

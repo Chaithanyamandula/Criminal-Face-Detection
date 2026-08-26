@@ -285,6 +285,39 @@
             border: 1px solid var(--green-active);
             color: var(--green-active);
         }
+
+        /* Responsive Media Queries */
+        @media (max-width: 900px) {
+            body { padding: 16px; }
+            .glass-container {
+                flex-direction: column;
+                max-width: 500px;
+                min-height: auto;
+            }
+            .left-tactical-panel {
+                padding: 32px 24px;
+                min-height: 260px;
+            }
+            .shield-reticle-box {
+                width: 130px;
+                height: 130px;
+                margin: 20px 0;
+            }
+            .shield-badge-icon {
+                font-size: 40px;
+            }
+            .right-form-panel {
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .glass-container { border-radius: 18px; }
+            .left-tactical-panel h1 { font-size: 20px; }
+            .right-form-panel { padding: 24px 16px; }
+            .alt-links { flex-direction: column; gap: 8px; text-align: center; }
+        }
     </style>
 </head>
 <body>
