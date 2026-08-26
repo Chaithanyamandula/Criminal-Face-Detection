@@ -11,7 +11,7 @@
 
   <br />
 
-  [🌐 Live Web App](https://criminal-face-detection.netlify.app/) • [⚡ Live API](https://criminal-face-detection-backend.onrender.com)
+
 
 </div>
 
