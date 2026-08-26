@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criminal Face Detection | Real-Time Surveillance HUD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <style>
+        :root {
+            --bg-void: #0B0F19;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --border-glow: rgba(0, 242, 254, 0.25);
+            --cyan-primary: #00F2FE;
+            --cyan-dim: #4FACFE;
+            --text-main: #F1F5F9;
+            --text-muted: #94A3B8;
+            --red-alert: #FF416C;
+            --green-active: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(0, 242, 254, 0.08) 0%, transparent 50%),
+                linear-gradient(rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.95)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 242, 254, 0.03) 1px, rgba(0, 242, 254, 0.03) 2px);
+            background-size: 100% 100%, 100% 100%, 100% 32px;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 32px;
+        }
+
+        /* Header Control Bar */
+        .hud-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 16px 28px;
+            margin-bottom: 24px;
+        }
+
+        .back-dashboard-btn {
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+            color: #0B0F19;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+            transition: all 0.3s ease;
+        }
+        .back-dashboard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.7);
+        }
+
+        .hud-telemetry {
+            display: flex;
+            gap: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--cyan-dim);
+        }
+
+        /* Surveillance Viewport */
+        .viewport-section {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 28px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .canvas-container {
+            width: 640px;
+            height: 480px;
+            position: relative;
+            background: #000;
+            border: 2px solid var(--cyan-primary);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 0 35px rgba(0, 242, 254, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: none;
+        }
+
+        #camera-feed {
+            width: 640px;
+            height: 480px;
+            object-fit: cover;
+        }
+
+        /* Target HUD Corner Brackets */
+        .hud-target-bracket {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--cyan-primary);
+            pointer-events: none;
+        }
+        .bracket-tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+        .bracket-tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+        .bracket-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+        .bracket-br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+
+        /* Floating Danger Alert Banner */
+        #criminal-alert {
+            display: none;
+            width: 340px;
+            background: linear-gradient(135deg, rgba(255, 65, 108, 0.95) 0%, rgba(255, 75, 43, 0.95) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--red-alert);
+            border-radius: 18px;
+            padding: 28px;
+            color: #FFFFFF;
+            box-shadow: 0 0 40px rgba(255, 65, 108, 0.6);
+            animation: alertPulse 1.5s infinite alternate;
+        }
+
+        @keyframes alertPulse {
+            0% { transform: scale(1); box-shadow: 0 0 30px rgba(255, 65, 108, 0.4); }
+            100% { transform: scale(1.02); box-shadow: 0 0 50px rgba(255, 65, 108, 0.8); }
+        }
+
+        #criminal-alert h3 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-row {
+            font-size: 14px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 6px;
+        }
+        .alert-row strong {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #FFE6E6;
+        }
+
+        /* Tactical Log Table */
+        .log-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 18px;
+            padding: 28px;
+        }
+
+        .log-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .log-title-bar h3 {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #criminal-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #criminal-table th {
+            background: rgba(0, 242, 254, 0.06);
+            color: var(--cyan-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        #criminal-table td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .status-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-pill.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green-active);
+            border: 1px solid var(--green-active);
+        }
+        .status-pill.inactive {
+            background: rgba(255, 65, 108, 0.15);
+            color: var(--red-alert);
+            border: 1px solid var(--red-alert);
+        }
+
+        .criminal-thumbnail {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--cyan-primary);
+            transition: transform 0.3s ease;
+        }
+        .criminal-thumbnail:hover {
+            transform: scale(1.8);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Control Bar -->
+    <header class="hud-header">
+        <button class="back-dashboard-btn" onclick="goBackToDashboard()">
+            <i class="fas fa-arrow-left"></i> Criminal Face Detection Dashboard
+        </button>
+
+        <div class="hud-telemetry">
+            <span id="digital-clock">CLOCK: 12:00:00 UTC</span>
+            <span id="fps-counter">FPS: 60.0</span>
+            <span>SURVEILLANCE MODE: ACTIVE</span>
+        </div>
+    </header>
+
+    <!-- Surveillance Viewport -->
+    <div class="viewport-section">
+        <div class="canvas-container">
+            <div class="hud-target-bracket bracket-tl"></div>
+            <div class="hud-target-bracket bracket-tr"></div>
+            <div class="hud-target-bracket bracket-bl"></div>
+            <div class="hud-target-bracket bracket-br"></div>
+
+            <video id="camera-feed" autoplay></video>
+        </div>
+
+        <!-- Floating Danger Alert Banner -->
+        <div id="criminal-alert">
+            <h3><i class="fas fa-triangle-exclamation"></i> HIGH-MATCH CRIMINAL DETECTED</h3>
+            <div class="alert-row"><strong>NAME:</strong> <span id="alert-name"></span></div>
+            <div class="alert-row"><strong>CRIME:</strong> <span id="alert-crime"></span></div>
+            <div class="alert-row"><strong>AADHAAR:</strong> <span id="alert-aadhaar"></span></div>
+        </div>
+    </div>
+
+    <!-- Detection History Log Table -->
+    <div class="log-container">
+        <div class="log-title-bar">
+            <h3><i class="fas fa-list-check"></i> Detection History Log</h3>
+        </div>
+
+        <table id="criminal-table">
+            <thead>
+                <tr>
+                    <th>STATUS BADGE</th>
+                    <th>CRIMINAL NAME</th>
+                    <th>CRIME DETAILS</th>
+                    <th>AADHAAR NUMBER</th>
+                    <th>SPOTTED TIME</th>
+                    <th>EXIT STATUS / TIME</th>
+                    <th>CAPTURED SNAPSHOT</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('digital-clock').textContent = `CLOCK: ${now.toTimeString().split(' ')[0]} UTC`;
+    }
+    setInterval(updateClock, 1000);
+
+    async function goBackToDashboard() {
+        try {
+            const video = document.getElementById('camera-feed');
+            if (video && video.srcObject) {
+                const stream = video.srcObject;
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+            if (window.eel && eel.cleanup_captures) {
+                await eel.cleanup_captures()();
+            }
+        } catch (e) {
+            console.error("Error during cleanup:", e);
+        }
+        window.location.href = 'dashboard.html';
+    }
+
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: { ideal: 640 }, height: { ideal: 480 } }
+            });
+            const video = document.getElementById('camera-feed');
+            video.srcObject = stream;
+            await video.play();
+            processVideoFrame();
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+        }
+    }
+
+    function updateCriminalAlert(criminal) {
+        const alert = document.getElementById('criminal-alert');
+        document.getElementById('alert-name').textContent = criminal.name || 'Unknown';
+        document.getElementById('alert-crime').textContent = criminal.crime || 'N/A';
+        document.getElementById('alert-aadhaar').textContent = criminal.aadhaar_number || 'N/A';
+        alert.style.display = 'block';
+        
+        setTimeout(() => { alert.style.display = 'none'; }, 5000);
+    }
+
+    function updateCriminalTable(data) {
+        if (!data || !data.name) return;
+        const tbody = document.querySelector('#criminal-table tbody');
+        const existingRow = document.querySelector(`tr[data-name="${data.name}"]`);
+        
+        if (existingRow) {
+            const statusCell = existingRow.querySelector('td:first-child');
+            const exitTimeCell = existingRow.querySelector('td:nth-child(6)');
+            if (data.exit_time && data.exit_time !== 'Still Present') {
+                statusCell.innerHTML = '<span class="status-pill inactive">🔴 Exited - Inactive</span>';
+                exitTimeCell.textContent = data.exit_time;
+            } else {
+                statusCell.innerHTML = '<span class="status-pill active">🟢 Active</span>';
+                exitTimeCell.textContent = 'Still Present';
+            }
+        } else {
+            const row = document.createElement('tr');
+            row.setAttribute('data-name', data.name);
+            row.innerHTML = `
+                <td><span class="status-pill active">🟢 Active</span></td>
+                <td><strong>${data.name}</strong></td>
+                <td>${data.crime || 'N/A'}</td>
+                <td>${data.aadhaar_number || 'N/A'}</td>
+                <td>${data.spotted_time || 'N/A'}</td>
+                <td>${data.exit_time || 'Still Present'}</td>
+                <td><img src="data:image/jpeg;base64,${data.photo}" alt="${data.name}" class="criminal-thumbnail"></td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+
+    async function processVideoFrame() {
+        const video = document.getElementById('camera-feed');
+        if (!video || !video.videoWidth || !video.videoHeight) {
+            requestAnimationFrame(processVideoFrame);
+            return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        try {
+            const result = await eel.process_camera_frame(imageData)();
+            if (result.status === 'success') {
+                updateCriminalAlert(result);
+                updateCriminalTable(result);
+            } else if (result.status === 'error' && result.exit_updates) {
+                result.exit_updates.forEach(update => {
+                    const existingRow = document.querySelector(`tr[data-name="${update.name}"]`);
+                    if (existingRow) {
+                        existingRow.querySelector('td:first-child').innerHTML = '<span class="status-pill inactive">🔴 Exited - Inactive</span>';
+                        existingRow.querySelector('td:nth-child(6)').textContent = update.exit_time;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error processing frame:', error);
+        }
+
+        requestAnimationFrame(processVideoFrame);
+    }
+
+    window.addEventListener('load', startCamera);
+    </script>
+</body>
+</html>

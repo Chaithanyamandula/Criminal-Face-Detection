@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criminal Face Detection | Biometric Authentication Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        :root {
+            --bg-void: #0B0F19;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --border-glow: rgba(0, 242, 254, 0.25);
+            --cyan-primary: #00F2FE;
+            --cyan-dim: #4FACFE;
+            --text-main: #F1F5F9;
+            --text-muted: #94A3B8;
+            --red-alert: #FF416C;
+            --green-active: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(79, 172, 254, 0.06) 0%, transparent 40%),
+                linear-gradient(rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.95)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 242, 254, 0.03) 1px, rgba(0, 242, 254, 0.03) 2px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 32px;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Glass Container Card */
+        .glass-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 242, 254, 0.15);
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Left Tactical Panel */
+        .left-tactical-panel {
+            flex: 1;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.06) 0%, rgba(11, 15, 25, 0.8) 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .panel-brand h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #FFFFFF 0%, var(--cyan-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .panel-brand p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--cyan-dim);
+            letter-spacing: 1.5px;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        .shield-reticle-box {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pulse-orbit {
+            position: absolute;
+            border: 2px dashed rgba(0, 242, 254, 0.3);
+            border-radius: 50%;
+            animation: rotateOrbit 20s linear infinite;
+        }
+        .orbit-1 { width: 180px; height: 180px; }
+        .orbit-2 { width: 130px; height: 130px; border-style: solid; border-color: rgba(0, 242, 254, 0.15); }
+
+        @keyframes rotateOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .shield-badge-icon {
+            font-size: 64px;
+            color: var(--cyan-primary);
+            filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.7));
+            animation: pulseGlow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.5)); }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(0, 242, 254, 0.9)); }
+        }
+
+        .panel-footer-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* Right Form Panel */
+        .right-form-panel {
+            flex: 1.25;
+            padding: 50px 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .nav-tab-slider {
+            display: flex;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 32px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 172, 254, 0.15) 100%);
+            border: 1px solid var(--cyan-primary);
+            color: var(--cyan-primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Floating Input Groups */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 14px 16px 42px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--cyan-primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--cyan-dim);
+            font-size: 14px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        .toggle-password:hover {
+            color: var(--cyan-primary);
+        }
+
+        .glow-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+            border: none;
+            border-radius: 12px;
+            color: #0B0F19;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .glow-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.7);
+        }
+
+        .glow-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .alt-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .alt-links a {
+            color: var(--cyan-dim);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .alt-links a:hover {
+            color: var(--cyan-primary);
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-error {
+            background: rgba(255, 65, 108, 0.15);
+            border: 1px solid var(--red-alert);
+            color: var(--red-alert);
+        }
+        .status-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--green-active);
+            color: var(--green-active);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-container">
+        <!-- Left Tactical Panel -->
+        <div class="left-tactical-panel">
+            <div class="panel-brand">
+                <h1>Criminal Face Detection</h1>
+                <p>AI-Powered Biometric Surveillance System</p>
+            </div>
+
+            <div class="shield-reticle-box">
+                <div class="pulse-orbit orbit-1"></div>
+                <div class="pulse-orbit orbit-2"></div>
+                <i class="fas fa-shield-halved shield-badge-icon"></i>
+            </div>
+
+            <div class="panel-footer-meta">
+                <p>SECURE SURVEILLANCE NODE // SEC-LEVEL 9</p>
+            </div>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="right-form-panel">
+            
+            <!-- Sign In Form -->
+            <div id="loginSection">
+                <div class="nav-tab-slider">
+                    <button class="tab-btn active">Sign In</button>
+                    <button class="tab-btn" onclick="showSignup()">Register User</button>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-id-badge input-icon"></i>
+                    <input type="text" id="username" placeholder="User ID / Officer Badge">
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-fingerprint input-icon"></i>
+                    <input type="password" id="password" placeholder="Passcode / Password">
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('password')"></i>
+                </div>
+
+                <button class="glow-btn" id="loginBtn" onclick="login()">
+                    <i class="fas fa-right-to-bracket"></i> Initialize Session
+                </button>
+
+                <div class="alt-links">
+                    <a href="#" onclick="showForgotPassword()">Forgot Passcode?</a>
+                    <a href="#" onclick="showSignup()">Request Access</a>
+                </div>
+
+                <div id="login-error" class="status-msg status-error">
+                    <i class="fas fa-triangle-exclamation"></i> Invalid Officer Credentials. Please retry.
+                </div>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupSection" style="display: none;">
+                <div class="nav-tab-slider">
+                    <button class="tab-btn" onclick="showLogin()">Sign In</button>
+                    <button class="tab-btn active">Register User</button>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-id-card input-icon"></i>
+                    <input type="text" id="user_id_signup" placeholder="User ID (e.g. user231)" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-user-shield input-icon"></i>
+                    <input type="text" id="name_signup" placeholder="Full Officer Name" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="email_signup" placeholder="Official Email Address" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password_signup" placeholder="Set Passcode" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('password_signup')"></i>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-shield-check input-icon"></i>
+                    <input type="password" id="re_password_signup" placeholder="Re-enter Passcode" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('re_password_signup')"></i>
+                </div>
+
+                <button class="glow-btn" onclick="signup()">
+                    <i class="fas fa-user-plus"></i> Register Officer
+                </button>
+
+                <div class="alt-links" style="justify-content: center; margin-top: 16px;">
+                    <a href="#" onclick="showLogin()"><i class="fas fa-arrow-left"></i> Return to Sign In</a>
+                </div>
+
+                <div id="signup-error" class="status-msg status-error">
+                    <i class="fas fa-triangle-exclamation"></i> Registration failed. User ID not authorized.
+                </div>
+            </div>
+
+            <!-- Forgot Password Section -->
+            <div id="forgotPasswordSection" style="display: none;">
+                <div class="nav-tab-slider">
+                    <button class="tab-btn active">Access Recovery</button>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-at input-icon"></i>
+                    <input type="text" id="username_email_forgot" placeholder="Username or Registered Email">
+                </div>
+
+                <button class="glow-btn" onclick="resetPassword()">
+                    <i class="fas fa-key"></i> Send OTP Recovery Request
+                </button>
+
+                <div class="alt-links" style="justify-content: center; margin-top: 16px;">
+                    <a href="#" onclick="showLogin()"><i class="fas fa-arrow-left"></i> Return to Sign In</a>
+                </div>
+
+                <div id="forgot-password-error" class="status-msg status-error">
+                    <i class="fas fa-circle-xmark"></i> Invalid Officer Credentials.
+                </div>
+                <div id="forgot-password-success" class="status-msg status-success">
+                    <i class="fas fa-circle-check"></i> OTP request dispatched to registered email.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript">
+        function showSection(sectionId) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('signupSection').style.display = 'none';
+            document.getElementById('forgotPasswordSection').style.display = 'none';
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        function showLogin() { showSection('loginSection'); }
+        function showSignup() { showSection('signupSection'); }
+        function showForgotPassword() { showSection('forgotPasswordSection'); }
+
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+
+            btn.classList.add('loading');
+            try {
+                let success = false;
+                if (window.eel && eel.check_login) {
+                    success = await eel.check_login(username, password)();
+                } else if (typeof API_BASE_URL !== 'undefined') {
+                    const res = await fetch(`${API_BASE_URL}/api/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    success = data.status === 'success';
+                }
+
+                btn.classList.remove('loading');
+                if (success) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (error) {
+                btn.classList.remove('loading');
+                console.error('Login error:', error);
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        async function signup() {
+            let user_id = document.getElementById('user_id_signup').value;
+            let name = document.getElementById('name_signup').value;
+            let email = document.getElementById('email_signup').value;
+            let password = document.getElementById('password_signup').value;
+            let re_password = document.getElementById('re_password_signup').value;
+
+            let signup_successful = false;
+            if (window.eel && eel.register_user) {
+                signup_successful = await eel.register_user(user_id, name, email, password, re_password)();
+            } else if (typeof API_BASE_URL !== 'undefined') {
+                const res = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id, name, email, password, re_password })
+                });
+                const data = await res.json();
+                signup_successful = data.status === 'success' ? true : data.message;
+            }
+
+            if (signup_successful === true) {
+                alert("Registration successful! Proceed to Sign In.");
+                showLogin();
+            } else {
+                const errDiv = document.getElementById('signup-error');
+                errDiv.textContent = typeof signup_successful === 'string' ? signup_successful : "Registration failed.";
+                errDiv.style.display = 'block';
+            }
+        }
+
+        async function resetPassword() {
+            let username_email = document.getElementById('username_email_forgot').value;
+            let reset_successful = false;
+            if (window.eel && eel.reset_password_request) {
+                reset_successful = await eel.reset_password_request(username_email)();
+            } else if (typeof API_BASE_URL !== 'undefined') {
+                const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username_email })
+                });
+                const data = await res.json();
+                reset_successful = data.status === 'success';
+            }
+
+            if (reset_successful) {
+                document.getElementById('forgot-password-success').style.display = 'block';
+                document.getElementById('forgot-password-error').style.display = 'none';
+            } else {
+                document.getElementById('forgot-password-error').style.display = 'block';
+                document.getElementById('forgot-password-success').style.display = 'none';
+            }
+        }
+
+        showLogin();
+    </script>
+</body>
+</html>

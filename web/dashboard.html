@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criminal Face Detection | Command Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <style>
+        :root {
+            --bg-void: #0B0F19;
+            --bg-panel: rgba(17, 24, 39, 0.85);
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-glow: rgba(0, 242, 254, 0.25);
+            --cyan-primary: #00F2FE;
+            --cyan-dim: #4FACFE;
+            --text-main: #F1F5F9;
+            --text-muted: #94A3B8;
+            --red-alert: #FF416C;
+            --green-active: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.08) 0%, transparent 50%),
+                linear-gradient(rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.95)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 242, 254, 0.03) 1px, rgba(0, 242, 254, 0.03) 2px);
+            background-size: 100% 100%, 100% 100%, 100% 32px;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation Bar */
+        .navbar {
+            height: 68px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #FFFFFF;
+        }
+        .nav-brand span { color: var(--cyan-primary); }
+
+        .telemetry-bar {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+        }
+        .stat-pill strong {
+            color: var(--cyan-primary);
+            font-size: 14px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(90deg, #FF416C 0%, #FF4B2B 100%);
+            border: none;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(255, 65, 108, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 65, 108, 0.6);
+        }
+
+        /* App Container & Hover Expandable Sidebar */
+        .app-layout {
+            display: flex;
+            margin-top: 68px;
+            min-height: calc(100vh - 68px);
+        }
+
+        .sidebar {
+            width: 76px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 24px 14px;
+            gap: 16px;
+            position: fixed;
+            top: 68px; bottom: 0;
+            z-index: 90;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover {
+            width: 250px;
+            box-shadow: 10px 0 35px rgba(0, 242, 254, 0.15);
+        }
+
+        .side-icon-btn {
+            width: 100%;
+            height: 50px;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+        }
+
+        .side-icon-btn i {
+            font-size: 18px;
+            min-width: 22px;
+            text-align: center;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .side-icon-btn span {
+            font-weight: 600;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            letter-spacing: 0.5px;
+            color: #FFFFFF;
+        }
+
+        .sidebar:hover .side-icon-btn span {
+            opacity: 1;
+        }
+
+        .sidebar:hover .side-icon-btn i {
+            transform: scale(1.25);
+            color: var(--cyan-primary);
+        }
+
+        .side-icon-btn:hover, .side-icon-btn.active {
+            background: rgba(0, 242, 254, 0.12);
+            color: var(--cyan-primary);
+            border-left: 4px solid var(--cyan-primary);
+        }
+        .side-icon-btn:hover span {
+            color: var(--cyan-primary);
+        }
+
+        /* Main Viewport */
+        .main-viewport {
+            margin-left: 76px;
+            flex: 1;
+            padding: 32px;
+            max-width: 1600px;
+        }
+
+        .hero-launch-card {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.08) 0%, rgba(15, 23, 42, 0.7) 100%);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 32px;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.1);
+        }
+
+        .hero-launch-card h2 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .launch-surveillance-btn {
+            padding: 18px 40px;
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+            border: none;
+            border-radius: 14px;
+            color: #0B0F19;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .launch-surveillance-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 40px rgba(0, 242, 254, 0.8);
+        }
+
+        /* Module Grid */
+        .module-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        .module-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .module-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .module-header h3 i { color: var(--cyan-primary); }
+
+        .form-grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+        .form-field label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%;
+            padding: 14px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #FFFFFF;
+            font-size: 14px;
+        }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+            outline: none;
+            border-color: var(--cyan-primary);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Dropzone Box */
+        .dropzone-box {
+            border: 2px dashed rgba(0, 242, 254, 0.3);
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            background: rgba(0, 242, 254, 0.02);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+        .dropzone-box:hover {
+            border-color: var(--cyan-primary);
+            background: rgba(0, 242, 254, 0.06);
+        }
+
+        .submit-module-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+            border: none;
+            border-radius: 10px;
+            color: #0B0F19;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            transition: all 0.3s ease;
+        }
+        .submit-module-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.6);
+        }
+
+        /* Confidence Match Card */
+        .result-match-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 16px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .result-match-card img {
+            width: 110px;
+            height: 110px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--cyan-primary);
+        }
+        .match-gauge-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .match-gauge-fill {
+            height: 100%;
+            width: 96.4%;
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i> CRIMINAL FACE <span>DETECTION</span>
+        </div>
+
+        <div class="telemetry-bar">
+            <div class="stat-pill">
+                <strong>1,248</strong> ENCODINGS
+            </div>
+            <div class="stat-pill">
+                <strong>42</strong> DAILY DETECTIONS
+            </div>
+            <div class="stat-pill">
+                <strong>8</strong> ACTIVE FEEDS
+            </div>
+            <div class="stat-pill">
+                <strong style="color:#10B981;">🟢 AI SERVER ONLINE</strong>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-power-off"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- App Layout -->
+    <div class="app-layout">
+        <!-- Hover Expandable Left Sidebar -->
+        <aside class="sidebar">
+            <button class="side-icon-btn active" onclick="showDetect()">
+                <i class="fas fa-video"></i>
+                <span>Real-Time Surveillance</span>
+            </button>
+            <button class="side-icon-btn" onclick="showUpload()">
+                <i class="fas fa-upload"></i>
+                <span>Upload Criminal Record</span>
+            </button>
+            <button class="side-icon-btn" onclick="showSearch()">
+                <i class="fas fa-search"></i>
+                <span>Biometric Search</span>
+            </button>
+            <button class="side-icon-btn" onclick="logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                <span>System Logout</span>
+            </button>
+        </aside>
+
+        <!-- Main Viewport -->
+        <main class="main-viewport">
+            <!-- Hero Surveillance Launcher -->
+            <div class="hero-launch-card" id="detect-content">
+                <h2>REAL-TIME SURVEILLANCE LAUNCH CENTER</h2>
+                <p style="color:var(--text-muted); font-family:'JetBrains Mono'; font-size:12px; margin-top:4px;">SURVEILLANCE_ACTIVE // SEC-LEVEL 9</p>
+                <button class="launch-surveillance-btn" onclick="startDetection()">
+                    <i class="fas fa-camera"></i> [ 🎥 Launch Real-Time Surveillance ]
+                </button>
+            </div>
+
+            <!-- Module Grid -->
+            <div class="module-grid">
+                
+                <!-- Upload Module -->
+                <div class="module-card" id="upload-content">
+                    <div class="module-header">
+                        <h3><i class="fas fa-upload"></i> Criminal Image Upload Form</h3>
+                    </div>
+
+                    <div class="form-grid-2col">
+                        <div class="form-field">
+                            <label for="name">Criminal Name</label>
+                            <input type="text" id="name" placeholder="Enter Full Name" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="aadhaar-number">12-Digit Aadhaar Number</label>
+                            <input type="text" id="aadhaar-number" placeholder="12-Digit Aadhaar" maxlength="12" required oninput="validateAadhaarNumber(this)">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="crime-category">Crime Category Select</label>
+                        <select id="crime-category">
+                            <option>CAT-1 (High Value Target)</option>
+                            <option>CAT-2 (Cyber Crime / Fraud)</option>
+                            <option>CAT-3 (Assault / Robbery)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="crime-details">Detailed Offense Description</label>
+                        <textarea id="crime-details" rows="3" placeholder="Enter Detailed Crime Report..." required></textarea>
+                    </div>
+
+                    <div id="file-upload-section">
+                        <div class="dropzone-box" onclick="document.getElementById('image-upload').click()">
+                            <i class="fas fa-cloud-arrow-up" style="font-size:32px; color:var(--cyan-dim); margin-bottom:8px;"></i>
+                            <p style="font-size:14px; font-weight:600;">Drag & Drop Facial Images or Browse</p>
+                            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Supports PNG, JPG, JPEG</p>
+                            <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
+                        </div>
+                        <button class="submit-module-btn" onclick="processImages()">
+                            <i class="fas fa-bolt"></i> Upload & Encode Facial Blob
+                        </button>
+                    </div>
+
+                    <div id="upload-results" style="margin-top:12px; font-family:'JetBrains Mono'; font-size:12px; color:var(--cyan-primary);"></div>
+                </div>
+
+                <!-- Search Module -->
+                <div class="module-card" id="search-content">
+                    <div class="module-header">
+                        <h3><i class="fas fa-search"></i> Biometric Image Search</h3>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="search-image">Search Image File</label>
+                        <input type="file" id="search-image" accept="image/*">
+                    </div>
+
+                    <button class="submit-module-btn" onclick="searchFace()">
+                        <i class="fas fa-magnifying-glass"></i> Correlate Against Database
+                    </button>
+
+                    <div id="search-results" style="margin-top:12px; font-family:'JetBrains Mono'; font-size:12px; color:var(--cyan-primary);"></div>
+
+                    <div id="criminal-details" style="display: none;" class="result-match-card">
+                        <img id="criminal-photo" src="" alt="Matched Criminal">
+                        <div style="flex:1;">
+                            <h4 id="criminal-name" style="font-size:16px; color:var(--cyan-primary);">Matched Subject</h4>
+                            <p style="font-size:13px; margin-top:4px;"><strong>Crime:</strong> <span id="criminal-crime"></span></p>
+                            <p style="font-size:13px; margin-top:2px;"><strong>Aadhaar:</strong> <span id="criminal-aadhaar"></span></p>
+
+                            <div style="margin-top:10px;">
+                                <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono'; font-size:10px; color:var(--text-muted);">
+                                    <span>MATCH ACCURACY</span>
+                                    <span style="color:var(--cyan-primary);">96.4%</span>
+                                </div>
+                                <div class="match-gauge-bar">
+                                    <div class="match-gauge-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="text/javascript">
+        function validateAadhaarNumber(input) {
+            input.value = input.value.replace(/\D/g, '');
+            if (input.value.length > 12) {
+                input.value = input.value.slice(0, 12);
+            }
+        }
+
+        async function startDetection() {
+            try {
+                if (window.eel && eel.start_detection) {
+                    await eel.start_detection()();
+                }
+            } catch (error) {
+                console.error('Error starting detection:', error);
+            }
+            window.location.href = 'detection.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof triggerCleanup === 'function') {
+                triggerCleanup();
+            }
+        });
+    </script>
+</body>
+</html>
