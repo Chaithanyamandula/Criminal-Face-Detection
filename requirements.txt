@@ -2,7 +2,6 @@ fastapi
 uvicorn[standard]
 python-multipart
 opencv-python-headless
-https://github.com/z-a-f/dlib-wheels/releases/download/v19.22/dlib-19.22.99-cp310-cp310-linux_x86_64.whl
 face_recognition
 numpy<2.0.0
 Pillow
