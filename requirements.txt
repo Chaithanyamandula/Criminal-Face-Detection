@@ -3,10 +3,8 @@ uvicorn[standard]
 python-multipart
 opencv-python-headless
 face_recognition
-numpy
+numpy<2.0.0
 Pillow
-dlib-bin
-setuptools<70
 gunicorn
 pydantic
 Eel
