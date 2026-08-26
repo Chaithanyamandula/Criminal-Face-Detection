@@ -35,6 +35,36 @@
 
 ---
 
+## 🔄 System Workflow & Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client ["Netlify Web Frontend"]
+        A[Authentication Portal - login.html] --> B[Command Dashboard - dashboard.html]
+        B --> C[Real-Time Surveillance HUD - detection.html]
+        B --> D[Upload Criminal Record]
+        B --> E[Biometric Search Engine]
+    end
+
+    subgraph Server ["Render Python Backend - FastAPI"]
+        F[FastAPI Server - Backend/api.py]
+        G[OpenCV / dlib Feature Extraction Engine]
+        H[SQLite Database - cfd.db]
+        I[SMTP Async Email Dispatcher]
+    end
+
+    C -->|POST /api/process-frame| F
+    D -->|POST /api/upload-criminal| F
+    E -->|POST /api/search-face| F
+    A -->|POST /api/login| F
+
+    F --> G
+    G --> H
+    F -->|Alert Trigger| I
+```
+
+---
+
 ## 🌟 Key Features
 
 - 📹 **Real-Time Surveillance HUD**: Live camera stream monitoring with bounding box facial target tracking.
@@ -68,9 +98,3 @@ pip install -r requirements.txt
 ```bash
 uvicorn Backend.api:app --host 0.0.0.0 --port 8000 --reload
 ```
-
----
-
-## 👨‍💻 Author & License
-
-Developed by **Chaithanyamandula**. Distributed under the **MIT License**.
