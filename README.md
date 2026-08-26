@@ -11,7 +11,7 @@
 
   <br />
 
-  [🌐 Live Backend API](https://criminal-face-detection-backend.onrender.com) • [🚀 Live Web App Demo](#-live-web-app-demo) • [🔑 Test Credentials](#-test-demo-credentials)
+  [🌐 Live Web App](https://criminal-face-detection.netlify.app/) • [⚡ Live API](https://criminal-face-detection-backend.onrender.com)
 
 </div>
 
@@ -19,15 +19,9 @@
 
 ## 🚀 Live Web App Demo
 
-> **Click the portal preview below to launch the live web application in a new tab:**
-
 <div align="center">
-  <a href="https://criminal-face-detection-backend.onrender.com" target="_blank" rel="noopener noreferrer">
-    <img src="web/preview.png" alt="Criminal Face Detection Portal Preview" width="850" style="border-radius:14px; border:2px solid #00F2FE; box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);" />
-  </a>
-  <br /><br />
-  <a href="https://criminal-face-detection-backend.onrender.com" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_DEMO-00F2FE?style=for-the-badge&logoColor=black" alt="Launch Live Demo" />
+  <a href="https://criminal-face-detection.netlify.app/" target="_blank" rel="noopener noreferrer">
+    <img src="web/preview.png" alt="Criminal Face Detection Portal Preview" width="100%" style="max-width: 750px; border-radius: 12px; border: 1px solid rgba(0, 242, 254, 0.4); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);" />
   </a>
 </div>
 
@@ -35,11 +29,9 @@
 
 ## 🔑 Test Demo Credentials
 
-Log in to the surveillance platform using the authorized officer test credentials below:
-
-| Officer User ID | Passcode | Authorized Access Role |
-| :--- | :--- | :--- |
-| **`user231`** | **`123456`** | Senior Surveillance Officer |
+| Officer User ID | Passcode |
+| :--- | :--- |
+| **`user231`** | **`123456`** |
 
 ---
 
